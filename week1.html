@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Week 1: Key & Lock Lab</title>
+    <title>Week 1: Interface Lab</title>
     <style>
         body {
             margin: 0;
@@ -12,192 +12,193 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background-color: #2d3436;
-            color: white;
+            background-color: #2c3e50;
+            color: #ecf0f1;
             font-family: 'Segoe UI', sans-serif;
             overflow: hidden;
-            user-select: none; /* 防止選取文字影響拖曳 */
         }
 
-        h1 { margin-bottom: 10px; }
-        p { color: #b2bec3; margin-bottom: 40px; text-align: center;}
+        h1 { margin-bottom: 5px; font-weight: 300; letter-spacing: 2px; }
+        p { color: #bdc3c7; margin-bottom: 40px; font-size: 0.9rem; }
 
-        .game-area {
-            position: relative;
-            width: 300px;
-            height: 400px;
-            background: rgba(255,255,255,0.1);
+        /* 實驗台區域 */
+        .lab-bench {
+            background: rgba(0,0,0,0.2);
+            padding: 40px;
             border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        /* 鎖 (System) */
+        .lock-container {
+            width: 120px;
+            height: 160px;
+            background: #f39c12;
+            border-radius: 15px 15px 0 0;
+            position: relative;
+            margin-bottom: 60px;
             display: flex;
             justify-content: center;
             align-items: center;
-        }
-
-        /* 鎖的樣式 (System) */
-        .lock {
-            font-size: 100px;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            filter: drop-shadow(0 0 10px rgba(0,0,0,0.5));
-            z-index: 1;
-        }
-
-        /* 鑰匙樣式 (Tool + Interface) */
-        .key {
-            font-size: 80px;
-            position: absolute;
-            bottom: 50px;
-            cursor: grab;
+            box-shadow: 0 10px 0 #d35400;
             transition: transform 0.1s;
-            z-index: 10;
-            filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3));
         }
 
-        .key:active {
-            cursor: grabbing;
-            transform: scale(1.1);
-        }
-
-        /* 視覺回饋文字 */
-        .feedback-text {
+        .shackle {
             position: absolute;
-            top: 20px;
-            font-size: 24px;
+            top: -60px;
+            width: 80px;
+            height: 80px;
+            border: 15px solid #bdc3c7;
+            border-bottom: none;
+            border-radius: 60px 60px 0 0;
+            z-index: -1;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .lock-hole {
+            width: 20px;
+            height: 40px;
+            background: #2c3e50;
+            border-radius: 10px;
+        }
+
+        /* 錯誤震動動畫 */
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-10px) rotate(-5deg); }
+            50% { transform: translateX(10px) rotate(5deg); }
+            75% { transform: translateX(-10px) rotate(-5deg); }
+            100% { transform: translateX(0); }
+        }
+
+        .lock-container.error {
+            animation: shake 0.4s ease-in-out;
+            background: #e74c3c; /* 變紅 */
+            box-shadow: 0 10px 0 #c0392b;
+        }
+
+        .lock-container.success .shackle {
+            transform: translateY(-30px) rotateY(20deg); /* 彈開 */
+            border-color: #2ecc71;
+        }
+        .lock-container.success {
+            background: #2ecc71;
+            box-shadow: 0 10px 0 #27ae60;
+        }
+
+        /* 鑰匙架 (Keys) */
+        .keys-rack {
+            display: flex;
+            gap: 20px;
+        }
+
+        .key-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s;
+            padding: 10px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.05);
+        }
+
+        .key-btn:hover {
+            background: rgba(255,255,255,0.15);
+            transform: translateY(-5px);
+        }
+
+        .key-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* 狀態文字 */
+        #status {
+            height: 30px;
+            margin-top: 20px;
             font-weight: bold;
             opacity: 0;
             transition: opacity 0.3s;
-            color: #00b894;
-        }
-
-        /* 成功特效 */
-        body.unlocked {
-            background-color: #00b894; /* 綠色背景代表成功 */
-        }
-        
-        .instruction {
-            position: absolute;
-            bottom: 20px;
-            font-size: 14px;
-            opacity: 0.6;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 0.3; }
-            50% { opacity: 0.8; }
-            100% { opacity: 0.3; }
         }
     </style>
 </head>
 <body>
 
-    <h1>鑰匙實驗室</h1>
-    <p>拖曳鑰匙 (Tool) 對準鎖孔 (Interface)<br>體驗 Feedback</p>
+    <h1>Interface Laboratory</h1>
+    <p>測試不同齒痕 (Interface)，找出能開啟系統 (System) 的那把鑰匙</p>
 
-    <div class="game-area" id="dropZone">
-        <div class="feedback-text" id="fbText">CLICK! Unlocked!</div>
-        <div class="lock" id="lock">🔒</div>
-        <div class="key" id="key">🗝️</div>
-        <div class="instruction">拖曳鑰匙去開鎖</div>
+    <div class="lab-bench">
+        <div class="lock-container" id="lock">
+            <div class="shackle"></div>
+            <div class="lock-hole"></div>
+        </div>
+
+        <div class="keys-rack">
+            <button class="key-btn" onclick="tryKey('flat')">
+                <svg width="60" height="120" viewBox="0 0 60 120">
+                    <circle cx="30" cy="20" r="15" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="4"/>
+                    <rect x="25" y="35" width="10" height="70" fill="#ecf0f1"/>
+                    <rect x="35" y="60" width="10" height="10" fill="#ecf0f1"/>
+                    <rect x="35" y="80" width="10" height="10" fill="#ecf0f1"/>
+                </svg>
+            </button>
+
+            <button class="key-btn" onclick="tryKey('sharp')">
+                <svg width="60" height="120" viewBox="0 0 60 120">
+                    <circle cx="30" cy="20" r="15" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="4"/>
+                    <rect x="25" y="35" width="10" height="70" fill="#ecf0f1"/>
+                    <path d="M35 50 L50 60 L35 70 Z" fill="#ecf0f1"/>
+                    <path d="M35 75 L50 85 L35 95 Z" fill="#ecf0f1"/>
+                </svg>
+            </button>
+
+            <button class="key-btn" onclick="tryKey('complex')">
+                <svg width="60" height="120" viewBox="0 0 60 120">
+                    <circle cx="30" cy="20" r="15" fill="#f1c40f" stroke="#f39c12" stroke-width="4"/>
+                    <rect x="25" y="35" width="10" height="70" fill="#f1c40f"/>
+                    <rect x="35" y="55" width="12" height="8" fill="#f1c40f"/>
+                    <rect x="35" y="70" width="8" height="8" fill="#f1c40f"/>
+                    <rect x="35" y="85" width="12" height="8" fill="#f1c40f"/>
+                </svg>
+            </button>
+        </div>
+        
+        <div id="status">Testing Interface...</div>
     </div>
 
     <script>
-        const key = document.getElementById('key');
         const lock = document.getElementById('lock');
-        const fbText = document.getElementById('fbText');
-        const dropZone = document.getElementById('dropZone');
-        
-        let isDragging = false;
-        let startX, startY, initialLeft, initialTop;
+        const status = document.getElementById('status');
+        let isLocked = true;
 
-        // 支援滑鼠與觸控
-        key.addEventListener('mousedown', startDrag);
-        key.addEventListener('touchstart', startDrag, {passive: false});
+        function tryKey(type) {
+            if (!isLocked) return; // 已經開了就不用試了
 
-        function startDrag(e) {
-            e.preventDefault();
-            isDragging = true;
+            // 重置狀態
+            lock.classList.remove('error');
+            status.style.opacity = '1';
             
-            // 取得初始位置
-            const rect = key.getBoundingClientRect();
-            
-            // 判斷是滑鼠還是觸控
-            const clientX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
-            const clientY = e.type === 'mousedown' ? e.clientY : e.touches[0].clientY;
-
-            startX = clientX - rect.left;
-            startY = clientY - rect.top;
-
-            // 綁定移動與結束事件
-            document.addEventListener('mousemove', moveDrag);
-            document.addEventListener('mouseup', endDrag);
-            document.addEventListener('touchmove', moveDrag, {passive: false});
-            document.addEventListener('touchend', endDrag);
-        }
-
-        function moveDrag(e) {
-            if (!isDragging) return;
-            e.preventDefault();
-
-            const clientX = e.type === 'mousemove' ? e.clientX : e.touches[0].clientX;
-            const clientY = e.type === 'mousemove' ? e.clientY : e.touches[0].clientY;
-
-            // 跟隨游標
-            key.style.position = 'fixed';
-            key.style.left = (clientX - startX) + 'px';
-            key.style.top = (clientY - startY) + 'px';
-        }
-
-        function endDrag(e) {
-            if (!isDragging) return;
-            isDragging = false;
-            
-            document.removeEventListener('mousemove', moveDrag);
-            document.removeEventListener('mouseup', endDrag);
-            document.removeEventListener('touchmove', moveDrag);
-            document.removeEventListener('touchend', endDrag);
-
-            checkUnlock();
-        }
-
-        function checkUnlock() {
-            const keyRect = key.getBoundingClientRect();
-            const lockRect = lock.getBoundingClientRect();
-
-            // 簡單的碰撞檢測：如果鑰匙中心點靠近鎖的中心點
-            const keyCenter = { x: keyRect.left + keyRect.width/2, y: keyRect.top + keyRect.height/2 };
-            const lockCenter = { x: lockRect.left + lockRect.width/2, y: lockRect.top + lockRect.height/2 };
-            
-            const distance = Math.hypot(keyCenter.x - lockCenter.x, keyCenter.y - lockCenter.y);
-
-            // 距離小於 60px 視為對準
-            if (distance < 60) {
-                unlockSuccess();
+            if (type === 'complex') {
+                // Correct Key
+                status.innerText = "Interface Matched! System Unlocked.";
+                status.style.color = "#2ecc71";
+                lock.classList.add('success');
+                isLocked = false;
             } else {
-                resetKey();
+                // Wrong Key
+                status.innerText = "Interface Mismatch. Access Denied.";
+                status.style.color = "#e74c3c";
+                
+                // 觸發重繪以重啟動畫
+                void lock.offsetWidth; 
+                lock.classList.add('error');
+                
+                // 震動回饋 (如果手機支援)
+                if (navigator.vibrate) navigator.vibrate(200);
             }
-        }
-
-        function unlockSuccess() {
-            // 1. 視覺 Feedback: 鎖打開
-            lock.textContent = '🔓';
-            lock.style.transform = 'scale(1.5)';
-            
-            // 2. 文字 Feedback
-            fbText.style.opacity = '1';
-
-            // 3. 背景變化 (氛圍 Feedback)
-            document.body.classList.add('unlocked');
-            
-            // 鑰匙消失 (因為已經插入)
-            key.style.display = 'none';
-        }
-
-        function resetKey() {
-            // 復原
-            key.style.position = 'absolute';
-            key.style.left = ''; 
-            key.style.top = '';
-            key.style.bottom = '50px'; // 回到原位
         }
     </script>
 </body>
