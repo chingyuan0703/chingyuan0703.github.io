@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Week 0: Mode Switch</title>
+    <style>
+        /* 基礎設定：讓畫面滿版、置中 */
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: system-ui, -apple-system, sans-serif;
+            transition: all 0.8s cubic-bezier(0.4, 0.0, 0.2, 1); /* 平滑過渡動畫 */
+            overflow: hidden;
+        }
+
+        /* 兩種模式的樣式定義 */
+        /* Survival: 像礦坑一樣暗沈 */
+        body.survival {
+            background-color: #1a1a1a;
+            color: #888;
+        }
+        
+        /* Creative: 像天空一樣繽紛 */
+        body.creative {
+            background: linear-gradient(135deg, #00c6fb 0%, #005bea 100%);
+            color: white;
+        }
+
+        /* 文字排版 */
+        .content {
+            text-align: center;
+            padding: 20px;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        p {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            max-width: 80%;
+            margin: 0 auto;
+            opacity: 0.8;
+        }
+
+        .role {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-top: 10px;
+            display: block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* 滑桿容器設計 */
+        .slider-container {
+            margin-top: 60px;
+            width: 300px;
+            position: relative;
+        }
+
+        /* 自訂滑桿樣式 */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 15px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.2);
+            outline: none;
+            transition: opacity .2s;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(255,255,255,0.5);
+            transition: transform 0.2s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .hint {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            opacity: 0.6;
+            letter-spacing: 1px;
+        }
+
+        /* 粒子特效 (僅在 Creative 模式出現) */
+        .particle {
+            position: absolute;
+            background: rgba(255,255,255,0.6);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: float 3s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="survival">
+
+    <div class="content">
+        <h1 id="title">SURVIVAL</h1>
+        <p id="desc">資源有限。規則既定。<br>面對挑戰與限制。</p>
+        <span class="role" id="role-tag">我是 使用者</span>
+    </div>
+
+    <div class="slider-container">
+        <input type="range" min="0" max="100" value="0" id="modeSwitch">
+        <div class="content hint">滑動切換模式</div>
+    </div>
+
+    <script>
+        const slider = document.getElementById('modeSwitch');
+        const body = document.body;
+        const title = document.getElementById('title');
+        const desc = document.getElementById('desc');
+        const roleTag = document.getElementById('role-tag');
+
+        slider.addEventListener('input', (e) => {
+            const val = e.target.value;
+            
+            // 當滑動超過 50% 時切換
+            if (val > 50) {
+                if (body.classList.contains('survival')) {
+                    body.classList.remove('survival');
+                    body.classList.add('creative');
+                    
+                    title.innerText = "CREATIVE";
+                    desc.innerHTML = "資源無限。想像奔馳。<br>創造新的可能性。";
+                    roleTag.innerText = "我是 設計師";
+                    
+                    createParticles(); // 啟動特效
+                }
+            } else {
+                if (body.classList.contains('creative')) {
+                    body.classList.remove('creative');
+                    body.classList.add('survival');
+                    
+                    title.innerText = "SURVIVAL";
+                    desc.innerHTML = "資源有限。規則既定。<br>面對挑戰與限制。";
+                    roleTag.innerText = "我是 使用者";
+                    
+                    removeParticles(); // 移除特效
+                }
+            }
+        });
+
+        // 簡單的粒子特效函數
+        let particleInterval;
+        function createParticles() {
+            if (particleInterval) return;
+            particleInterval = setInterval(() => {
+                const p = document.createElement('div');
+                p.classList.add('particle');
+                p.style.left = Math.random() * 100 + 'vw';
+                p.style.top = Math.random() * 100 + 'vh';
+                const size = Math.random() * 10 + 5;
+                p.style.width = size + 'px';
+                p.style.height = size + 'px';
+                p.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                document.body.appendChild(p);
+                
+                setTimeout(() => p.remove(), 4000);
+            }, 100);
+        }
+
+        function removeParticles() {
+            clearInterval(particleInterval);
+            particleInterval = null;
+            document.querySelectorAll('.particle').forEach(p => p.remove());
+        }
+    </script>
+</body>
+</html>
