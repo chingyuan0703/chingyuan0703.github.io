@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Week 7: Addiction Lab</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
+            overflow: hidden;
+            transition: background 0.2s;
+        }
+
+        h1 { color: #1c1e21; margin-bottom: 10px; font-size: 1.5rem; }
+        p { color: #65676b; margin-bottom: 40px; text-align: center; font-size: 0.9rem; max-width: 300px; }
+
+        /* 假的 App Icon 區域 */
+        .app-icon-container {
+            position: relative;
+            margin-bottom: 50px;
+            cursor: pointer;
+        }
+
+        .app-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(45deg, #4e54c8, #8f94fb);
+            border-radius: 18px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 40px;
+            color: white;
+        }
+
+        /* 萬惡的紅點 */
+        .badge {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background-color: #ff3b30;
+            color: white;
+            border-radius: 50%;
+            padding: 5px 10px;
+            font-size: 14px;
+            font-weight: bold;
+            border: 2px solid #f0f2f5;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            animation: bounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes bounce {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        /* 魔性按鈕 */
+        #magicButton {
+            width: 220px;
+            height: 60px;
+            border-radius: 30px;
+            border: none;
+            background: #1877f2;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(24, 119, 242, 0.4);
+            cursor: pointer;
+            transition: transform 0.1s;
+            outline: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #magicButton:active {
+            transform: scale(0.95);
+        }
+
+        /* 獎勵特效 */
+        .reward {
+            position: absolute;
+            font-weight: 800;
+            font-size: 24px;
+            pointer-events: none;
+            animation: floatUp 0.8s ease-out forwards;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(0.5); opacity: 0; }
+            50% { opacity: 1; transform: translateY(-50px) scale(1.2); }
+            100% { transform: translateY(-100px) scale(1); opacity: 0; }
+        }
+
+        .counter-text {
+            margin-top: 20px;
+            color: #888;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-icon-container" onclick="addBadge()">
+        <div class="app-icon">👻</div>
+        <div class="badge" id="badgeCount">1</div>
+    </div>
+
+    <h1>Week 7: Human Hacking</h1>
+    <p>試試看能不能忽視上面的紅點？<br>或者按下面的按鈕獲得獎勵？</p>
+
+    <button id="magicButton">給我多巴胺 (Reward)</button>
+    <div class="counter-text">點擊次數: <span id="clickCount">0</span></div>
+
+    <script>
+        const btn = document.getElementById('magicButton');
+        const badge = document.getElementById('badgeCount');
+        const clickDisplay = document.getElementById('clickCount');
+        
+        let count = 0;
+        let badgeNum = 1;
+
+        // 間歇性獎勵詞彙 (Intermittent Variable Rewards)
+        const rewards = ["Nice!", "Good!", "Great!", "❤️", "👍", "🔥", "💎", "JACKPOT!", "Amazing!"];
+        
+        // 自動增加紅點焦慮 (FOMO Simulation)
+        setInterval(() => {
+            addBadge();
+        }, 3000); // 每3秒增加一次焦慮
+
+        function addBadge() {
+            badgeNum++;
+            badge.innerText = badgeNum > 99 ? "99+" : badgeNum;
+            
+            // 讓紅點跳動一下吸引注意
+            badge.style.animation = 'none';
+            badge.offsetHeight; /* trigger reflow */
+            badge.style.animation = 'bounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+        }
+
+        btn.addEventListener('click', (e) => {
+            count++;
+            clickDisplay.innerText = count;
+
+            // 隨機獎勵機制
+            // 只有 40% 的機率會出現大獎勵 (Variable Ratio Schedule)
+            if (Math.random() > 0.6) {
+                showReward(e.clientX, e.clientY);
+                
+                // 偶爾隨機改變背景色，增加視覺刺激
+                const hue = Math.floor(Math.random() * 360);
+                document.body.style.backgroundColor = `hsl(${hue}, 70%, 95%)`;
+            } else {
+                // 沒有獎勵時，背景回復
+                document.body.style.backgroundColor = "#f0f2f5";
+            }
+        });
+
+        function showReward(x, y) {
+            const el = document.createElement('div');
+            el.classList.add('reward');
+            el.innerText = rewards[Math.floor(Math.random() * rewards.length)];
+            
+            // 隨機顏色
+            const colors = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502'];
+            el.style.color = colors[Math.floor(Math.random() * colors.length)];
+
+            // 位置偏移
+            const offsetX = (Math.random() - 0.5) * 60;
+            el.style.left = `${x + offsetX}px`;
+            el.style.top = `${y - 40}px`;
+
+            document.body.appendChild(el);
+
+            setTimeout(() => el.remove(), 1000);
+        }
+    </script>
+</body>
+</html>
