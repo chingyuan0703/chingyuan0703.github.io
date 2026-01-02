@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Week 5: Wizard of Oz Console</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            background-color: #1a1a1a;
+            color: #0f0;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* 頂部：機器人狀態顯示區 (模擬前台) */
+        .robot-display {
+            width: 100%;
+            height: 40%;
+            background: #000;
+            border: 2px solid #333;
+            border-radius: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 5rem;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.1);
+            transition: all 0.3s;
+        }
+
+        .status-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            color: #555;
+            text-transform: uppercase;
+        }
+
+        /* 中間：系統日誌 (模擬 AI 思考) */
+        .system-log {
+            width: 100%;
+            height: 20%;
+            background: rgba(0, 255, 0, 0.05);
+            border: 1px dashed #333;
+            padding: 10px;
+            overflow-y: auto;
+            font-size: 0.8rem;
+            margin: 10px 0;
+            text-align: left;
+        }
+        
+        .log-entry { margin-bottom: 5px; opacity: 0.8; }
+        .log-time { color: #888; margin-right: 5px; }
+
+        /* 底部：控制台 (Wizard操作區) */
+        .controls {
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        button {
+            background: #222;
+            border: 1px solid #0f0;
+            color: #0f0;
+            padding: 15px;
+            font-family: inherit;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+
+        button:active {
+            background: #0f0;
+            color: #000;
+            transform: scale(0.95);
+        }
+
+        /* 狀態樣式 */
+        .joy { color: #ffeaa7; text-shadow: 0 0 20px #ffeaa7; }
+        .anger { color: #ff7675; text-shadow: 0 0 20px #ff7675; }
+        .sadness { color: #74b9ff; text-shadow: 0 0 20px #74b9ff; }
+        .listening { color: #55efc4; text-shadow: 0 0 20px #55efc4; animation: pulse 2s infinite; }
+
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+
+    </style>
+</head>
+<body>
+
+    <div class="robot-display" id="robotFace">
+        <span class="status-badge">Output Monitor</span>
+        <div id="faceIcon">●</div>
+    </div>
+
+    <div class="system-log" id="logArea">
+        <div class="log-entry"><span class="log-time">[System]</span> Ready. Waiting for Wizard input...</div>
+    </div>
+
+    <div class="controls">
+        <button onclick="trigger('joy', '😄', 'User seems happy. Mirroring emotion.')">JOY</button>
+        <button onclick="trigger('anger', '💢', 'Negative sentiment detected. Apologizing.')">ANGER</button>
+        <button onclick="trigger('sadness', '😢', 'Empathy mode engaged. Low pitch tone.')">SAD</button>
+        <button onclick="trigger('surprise', '😲', 'Unexpected input. Eyes wide open.')">SURPRISE</button>
+        <button onclick="trigger('listening', '👂', 'Microphone active. Head tilt 15 deg.')">LISTEN</button>
+        <button onclick="trigger('sleep', '💤', 'Power saving mode. Dimming lights.')">SLEEP</button>
+    </div>
+
+    <script>
+        const face = document.getElementById('robotFace');
+        const icon = document.getElementById('faceIcon');
+        const logArea = document.getElementById('logArea');
+
+        function trigger(state, emoji, logMsg) {
+            // 1. 更新機器人表情 (Output)
+            face.className = 'robot-display'; // 重置
+            void face.offsetWidth; // 觸發重繪
+            face.classList.add(state); // 加入新狀態
+            icon.innerText = emoji;
+
+            // 2. 更新日誌 (System Log)
+            const now = new Date();
+            const timeStr = now.getHours().toString().padStart(2,'0') + ":" + 
+                            now.getMinutes().toString().padStart(2,'0') + ":" + 
+                            now.getSeconds().toString().padStart(2,'0');
+            
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `<span class="log-time">[${timeStr}]</span> Wizard Command: ${state.toUpperCase()} -> ${logMsg}`;
+            
+            logArea.insertBefore(entry, logArea.firstChild); // 最新訊息在最上面
+        }
+    </script>
+</body>
+</html>
