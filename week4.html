@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Week 4: Robot Face</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            background-color: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            font-family: sans-serif;
+        }
+
+        /* 臉部區域 */
+        .face-container {
+            display: flex;
+            gap: 60px;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* 眼睛樣式 */
+        .eye {
+            width: 100px;
+            height: 120px;
+            background-color: #00f2ff; /* 充滿未來感的青色 */
+            border-radius: 50%;
+            box-shadow: 0 0 40px #00f2ff, inset 0 0 20px rgba(255,255,255,0.8);
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        /* 瞳孔 (讓眼神更有神) */
+        .pupil {
+            width: 30px;
+            height: 30px;
+            background: rgba(0,0,0,0.8);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.1s;
+        }
+
+        /* 眨眼動畫 */
+        @keyframes blink {
+            0%, 90%, 100% { transform: scaleY(1); }
+            95% { transform: scaleY(0.1); }
+        }
+
+        .eye {
+            animation: blink 4s infinite;
+        }
+
+        /* 情緒樣式定義 */
+        
+        /* 生氣：眼睛變扁平，顏色變紅，向內傾斜 */
+        body.angry .eye {
+            background-color: #ff3e3e;
+            box-shadow: 0 0 40px #ff3e3e;
+            height: 80px;
+            border-radius: 10px 10px 50px 50px; /* 半圓 */
+        }
+        body.angry .left { transform: rotate(20deg); }
+        body.angry .right { transform: rotate(-20deg); }
+
+        /* 開心：眼睛變彎月形 */
+        body.happy .eye {
+            background-color: #ffeaa7;
+            box-shadow: 0 0 40px #ffeaa7;
+            height: 60px;
+            border-radius: 50% 50% 10px 10px; /* 倒彎月 */
+            transform: translateY(-20px);
+        }
+
+        /* 驚訝：眼睛變大圓 */
+        body.surprise .eye {
+            transform: scale(1.2);
+            background-color: #fab1a0;
+            box-shadow: 0 0 40px #fab1a0;
+        }
+        body.surprise .pupil { transform: translate(-50%, -50%) scale(0.5); }
+
+        /* 操作提示 */
+        .controls {
+            position: absolute;
+            bottom: 30px;
+            display: flex;
+            gap: 15px;
+            z-index: 10;
+        }
+
+        button {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.4);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+        }
+
+        button:active { background: white; color: black; }
+
+    </style>
+</head>
+<body class="neutral">
+
+    <div class="face-container">
+        <div class="eye left"><div class="pupil"></div></div>
+        <div class="eye right"><div class="pupil"></div></div>
+    </div>
+
+    <div class="controls">
+        <button onclick="setMood('neutral')">😐 一般</button>
+        <button onclick="setMood('happy')">😄 開心</button>
+        <button onclick="setMood('angry')">😡 生氣</button>
+        <button onclick="setMood('surprise')">😲 驚訝</button>
+    </div>
+
+    <script>
+        const pupils = document.querySelectorAll('.pupil');
+        const body = document.body;
+
+        function setMood(mood) {
+            // 移除所有情緒 class
+            body.className = '';
+            // 加入新的情緒 class
+            body.classList.add(mood);
+        }
+
+        // 讓眼睛跟隨滑鼠/觸控移動 (Eye Tracking)
+        document.addEventListener('mousemove', (e) => {
+            moveEyes(e.clientX, e.clientY);
+        });
+
+        document.addEventListener('touchmove', (e) => {
+            moveEyes(e.touches[0].clientX, e.touches[0].clientY);
+        });
+
+        function moveEyes(x, y) {
+            // 限制瞳孔移動範圍
+            const limit = 15;
+            
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            
+            // 計算滑鼠相對於螢幕中心的偏移量 (-1 到 1)
+            const moveX = (x - w/2) / (w/2);
+            const moveY = (y - h/2) / (h/2);
+
+            pupils.forEach(pupil => {
+                pupil.style.transform = `translate(calc(-50% + ${moveX * limit}px), calc(-50% + ${moveY * limit}px))`;
+            });
+        }
+    </script>
+</body>
+</html>
