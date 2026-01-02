@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Week 6: HCI Skill Radar</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            background-color: #050510;
+            color: #fff;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        h1 { color: #00f2ff; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; }
+        p { color: #888; margin-bottom: 30px; font-size: 0.9rem; }
+
+        .main-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 40px;
+            justify-content: center;
+            align-items: center;
+            width: 90%;
+            max-width: 900px;
+        }
+
+        /* 雷達圖區域 */
+        .radar-box {
+            position: relative;
+            width: 300px;
+            height: 300px;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .role-badge {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: rgba(255,255,255,0.9);
+            text-shadow: 0 0 10px rgba(0, 242, 255, 0.8);
+            pointer-events: none;
+            text-align: center;
+        }
+
+        /* 控制滑桿區域 */
+        .controls {
+            background: rgba(255,255,255,0.05);
+            padding: 20px;
+            border-radius: 15px;
+            min-width: 280px;
+            border: 1px solid rgba(0, 242, 255, 0.2);
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+            color: #ccc;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            background: #333;
+            height: 6px;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #00f2ff;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px #00f2ff;
+        }
+
+        .score-val { color: #00f2ff; font-weight: bold; }
+
+    </style>
+</head>
+<body>
+
+    <h1>HCI Capability Radar</h1>
+    <p>盤點你的核心能力，看見你的設計人格</p>
+
+    <div class="main-container">
+        <div class="radar-box">
+            <canvas id="radarCanvas" width="300" height="300"></canvas>
+            <div class="role-badge" id="roleText">LOADING...</div>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label>同理觀察 (Empathy) <span class="score-val" id="val0">5</span></label>
+                <input type="range" min="1" max="10" value="5" oninput="updateChart(0, this.value)">
+            </div>
+            <div class="control-group">
+                <label>動手實作 (Prototyping) <span class="score-val" id="val1">5</span></label>
+                <input type="range" min="1" max="10" value="5" oninput="updateChart(1, this.value)">
+            </div>
+            <div class="control-group">
+                <label>邏輯思維 (Logic) <span class="score-val" id="val2">5</span></label>
+                <input type="range" min="1" max="10" value="5" oninput="updateChart(2, this.value)">
+            </div>
+            <div class="control-group">
+                <label>視覺敘事 (Storytelling) <span class="score-val" id="val3">5</span></label>
+                <input type="range" min="1" max="10" value="5" oninput="updateChart(3, this.value)">
+            </div>
+            <div class="control-group">
+                <label>AI 協作 (AI Co-pilot) <span class="score-val" id="val4">5</span></label>
+                <input type="range" min="1" max="10" value="5" oninput="updateChart(4, this.value)">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('radarCanvas');
+        const ctx = canvas.getContext('2d');
+        const roleText = document.getElementById('roleText');
+        
+        // 5個向度的分數 (初始值 5)
+        let scores = [5, 5, 5, 5, 5];
+        const labels = ["Empathy", "Prototyping", "Logic", "Story", "AI"];
+        
+        // 繪圖參數
+        const centerX = 150;
+        const centerY = 150;
+        const radius = 100;
+        const sides = 5;
+        const angleStep = (Math.PI * 2) / sides;
+
+        function updateChart(index, value) {
+            scores[index] = parseInt(value);
+            document.getElementById('val'+index).innerText = value;
+            drawRadar();
+            determineRole();
+        }
+
+        function drawRadar() {
+            ctx.clearRect(0, 0, 300, 300);
+
+            // 1. 畫背景網格 (同心五邊形)
+            ctx.strokeStyle = "rgba(255,255,255,0.1)";
+            ctx.lineWidth = 1;
+            for (let level = 1; level <= 5; level++) {
+                ctx.beginPath();
+                for (let i = 0; i < sides; i++) {
+                    const r = (radius / 5) * level;
+                    const x = centerX + r * Math.cos(i * angleStep - Math.PI/2);
+                    const y = centerY + r * Math.sin(i * angleStep - Math.PI/2);
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+                ctx.stroke();
+            }
+
+            // 2. 畫軸線 & 文字
+            ctx.fillStyle = "#aaa";
+            ctx.font = "12px Arial";
+            ctx.textAlign = "center";
+            for (let i = 0; i < sides; i++) {
+                const x = centerX + radius * Math.cos(i * angleStep - Math.PI/2);
+                const y = centerY + radius * Math.sin(i * angleStep - Math.PI/2);
+                
+                // 軸線
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+
+                // 文字 (稍微往外推一點)
+                const tx = centerX + (radius + 20) * Math.cos(i * angleStep - Math.PI/2);
+                const ty = centerY + (radius + 20) * Math.sin(i * angleStep - Math.PI/2);
+                ctx.fillText(labels[i], tx, ty + 5);
+            }
+
+            // 3. 畫能力分佈 (填色區域)
+            ctx.beginPath();
+            for (let i = 0; i < sides; i++) {
+                // 將 1-10 分映射到半徑
+                const r = (radius / 10) * scores[i];
+                const x = centerX + r * Math.cos(i * angleStep - Math.PI/2);
+                const y = centerY + r * Math.sin(i * angleStep - Math.PI/2);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            
+            // 填色樣式
+            ctx.fillStyle = "rgba(0, 242, 255, 0.4)";
+            ctx.fill();
+            ctx.strokeStyle = "#00f2ff";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        function determineRole() {
+            const sum = scores.reduce((a, b) => a + b, 0);
+            const max = Math.max(...scores);
+            const maxIndex = scores.indexOf(max);
+
+            if (sum > 40) {
+                roleText.innerText = "HCI 大師";
+            } else if (sum < 15) {
+                roleText.innerText = "新手學徒";
+            } else {
+                // 根據最高分判斷風格
+                switch(maxIndex) {
+                    case 0: roleText.innerText = "暖心觀察家"; break;
+                    case 1: roleText.innerText = "熱血工匠"; break;
+                    case 2: roleText.innerText = "邏輯駭客"; break;
+                    case 3: roleText.innerText = "靈魂詩人"; break;
+                    case 4: roleText.innerText = "AI 領航員"; break;
+                    default: roleText.innerText = "平衡發展者";
+                }
+            }
+        }
+
+        // 初始繪製
+        drawRadar();
+        determineRole();
+    </script>
+</body>
+</html>
