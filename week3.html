@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Week 3: Emotion Journey Map</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 { margin-bottom: 10px; }
+        p { color: #666; margin-bottom: 30px; text-align: center; max-width: 500px; }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        /* 情緒滑桿 */
+        input[type="range"] {
+            width: 100px;
+        }
+
+        button#addBtn {
+            padding: 10px 20px;
+            background: #0984e3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button#addBtn:hover { background: #0076d1; }
+
+        /* 畫布區域 */
+        .chart-container {
+            margin-top: 30px;
+            position: relative;
+            height: 300px;
+            border-left: 2px solid #ddd;
+            border-bottom: 2px solid #ddd;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        /* 情緒表情提示 */
+        .emotion-icons {
+            position: absolute;
+            left: -30px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 10px 0;
+            font-size: 1.2rem;
+        }
+        
+        .point-list {
+            margin-top: 20px;
+            list-style: none;
+            padding: 0;
+        }
+        
+        .point-item {
+            background: #eee;
+            margin-bottom: 5px;
+            padding: 5px 10px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>旅程地圖產生器</h1>
+    <p>輸入事件並設定情緒高低 (🙁 -> 😀)，繪製出一天的情緒起伏。</p>
+
+    <div class="container">
+        <div class="input-group">
+            <input type="text" id="eventInput" placeholder="例如：排隊買早餐...">
+            <span style="font-size: 1.2rem;">🙁</span>
+            <input type="range" id="moodInput" min="0" max="100" value="50">
+            <span style="font-size: 1.2rem;">😀</span>
+            <button id="addBtn">紀錄</button>
+        </div>
+
+        <ul class="point-list" id="pointList">
+            </ul>
+
+        <div class="chart-container">
+            <div class="emotion-icons">
+                <span>😀</span>
+                <span>😐</span>
+                <span>🙁</span>
+            </div>
+            <canvas id="journeyCanvas"></canvas>
+        </div>
+        <div class="labels" id="timeLabels">
+            <span>Start</span>
+            <span>End</span>
+        </div>
+    </div>
+
+    <script>
+        const eventInput = document.getElementById('eventInput');
+        const moodInput = document.getElementById('moodInput');
+        const addBtn = document.getElementById('addBtn');
+        const pointList = document.getElementById('pointList');
+        const canvas = document.getElementById('journeyCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // 資料陣列
+        let points = [
+            { event: "起床", mood: 40 }, // 預設資料
+            { event: "通勤", mood: 20 }
+        ];
+
+        // 初始化
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        render();
+
+        addBtn.addEventListener('click', () => {
+            const text = eventInput.value;
+            if (!text) return;
+            
+            points.push({
+                event: text,
+                mood: parseInt(moodInput.value)
+            });
+            
+            eventInput.value = '';
+            moodInput.value = 50; // 重置
+            render();
+        });
+
+        function render() {
+            renderList();
+            drawChart();
+        }
+
+        function renderList() {
+            pointList.innerHTML = '';
+            points.forEach((p, index) => {
+                const li = document.createElement('li');
+                li.className = 'point-item';
+                li.innerHTML = `<span>${index+1}. ${p.event}</span> <span>${getMoodEmoji(p.mood)}</span>`;
+                pointList.appendChild(li);
+            });
+        }
+
+        function drawChart() {
+            const width = canvas.width;
+            const height = canvas.height;
+            const padding = 20;
+            
+            ctx.clearRect(0, 0, width, height);
+            
+            if (points.length < 1) return;
+
+            // 畫線
+            ctx.beginPath();
+            ctx.strokeStyle = '#0984e3';
+            ctx.lineWidth = 3;
+
+            const stepX = (width - padding * 2) / (Math.max(points.length - 1, 1));
+
+            points.forEach((p, i) => {
+                const x = padding + i * stepX;
+                // y 軸翻轉：100 (高分) 在上面 (y小)，0 (低分) 在下面 (y大)
+                const y = height - (p.mood / 100) * (height - padding * 2) - padding;
+                
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+                
+                // 畫點
+                // 暫存給之後畫圓圈用
+                p._x = x;
+                p._y = y;
+            });
+            ctx.stroke();
+
+            // 畫點點
+            points.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p._x, p._y, 6, 0, Math.PI * 2);
+                ctx.fillStyle = p.mood > 50 ? '#00b894' : '#d63031'; // 綠色開心，紅色不開心
+                ctx.fill();
+                ctx.strokeStyle = 'white';
+                ctx.stroke();
+            });
+        }
+
+        function resizeCanvas() {
+            // 處理 Retina 解析度
+            const displayWidth = canvas.clientWidth;
+            const displayHeight = canvas.clientHeight;
+            canvas.width = displayWidth;
+            canvas.height = displayHeight;
+            drawChart();
+        }
+
+        function getMoodEmoji(val) {
+            if (val > 70) return '😀';
+            if (val > 40) return '😐';
+            return '🙁';
+        }
+    </script>
+</body>
+</html>
