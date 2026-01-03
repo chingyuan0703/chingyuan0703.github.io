@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Week 13: Graduation</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Noto+Serif+TC:wght@700&display=swap');
+
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
+        }
+
+        /* 輸入區域 */
+        .input-container {
+            text-align: center;
+            transition: opacity 0.5s;
+        }
+        
+        .input-container.hide {
+            opacity: 0;
+            pointer-events: none;
+            position: absolute;
+        }
+
+        h1 { color: #2d3436; margin-bottom: 30px; }
+
+        input {
+            padding: 15px;
+            font-size: 1.2rem;
+            border: 2px solid #b2bec3;
+            border-radius: 10px;
+            width: 250px;
+            text-align: center;
+            margin-bottom: 20px;
+            outline: none;
+        }
+
+        button {
+            padding: 15px 40px;
+            background: #0984e3;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(9, 132, 227, 0.4);
+            transition: transform 0.2s;
+        }
+
+        button:active { transform: scale(0.95); }
+
+        /* 證書樣式 */
+        .certificate-container {
+            position: relative;
+            width: 800px; /* 標準 A4 比例寬度 */
+            height: 560px;
+            background: #fff;
+            border: 20px solid #2d3436;
+            padding: 40px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23f0f0f0' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        .certificate-container.show {
+            opacity: 1;
+            transform: scale(1); /* 針對手機可以調整縮放 */
+        }
+
+        /* 金邊裝飾 */
+        .border-inner {
+            position: absolute;
+            top: 10px; left: 10px; right: 10px; bottom: 10px;
+            border: 2px solid #daa520;
+            pointer-events: none;
+        }
+
+        .header {
+            font-family: 'Cinzel', serif;
+            font-size: 3rem;
+            color: #2d3436;
+            margin-bottom: 10px;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+        }
+
+        .sub-header {
+            font-size: 1.2rem;
+            color: #636e72;
+            margin-bottom: 40px;
+            font-style: italic;
+        }
+
+        .name {
+            font-family: 'Noto Serif TC', serif;
+            font-size: 4rem;
+            color: #d63031;
+            margin: 20px 0;
+            border-bottom: 2px solid #2d3436;
+            padding: 0 20px;
+        }
+
+        .body-text {
+            font-size: 1.1rem;
+            color: #2d3436;
+            line-height: 1.8;
+            max-width: 80%;
+            margin-bottom: 50px;
+        }
+
+        .footer {
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            margin-top: auto;
+        }
+
+        .signature {
+            border-top: 1px solid #2d3436;
+            padding-top: 10px;
+            font-family: 'Cinzel', serif;
+            font-weight: bold;
+        }
+
+        .seal {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 3px solid #d63031;
+            color: #d63031;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            transform: rotate(-15deg);
+            opacity: 0.8;
+            font-family: 'Cinzel', serif;
+            box-shadow: 0 0 0 5px rgba(214, 48, 49, 0.1);
+        }
+
+        /* 手機版適配 */
+        @media (max-width: 850px) {
+            .certificate-container {
+                width: 90vw;
+                height: auto;
+                min-height: 500px;
+                padding: 20px;
+            }
+            .header { font-size: 2rem; }
+            .name { font-size: 2.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="input-container" id="inputArea">
+        <h1>準備好領取你的禮物了嗎？</h1>
+        <input type="text" id="userName" placeholder="請輸入你的名字">
+        <br>
+        <button onclick="generateCertificate()">領取結業證書</button>
+    </div>
+
+    <div class="certificate-container" id="cert">
+        <div class="border-inner"></div>
+        <div class="header">Certificate</div>
+        <div class="sub-header">of Creative Mode Completion</div>
+        
+        <div class="name" id="certName">User Name</div>
+        
+        <p class="body-text">
+            茲證明該學員已成功從「生存模式」切換至「創造模式」。<br>
+            具備看見隱形介面、設計情感互動、並運用 AI 協作之能力。<br>
+            特頒此證，以茲鼓勵，願你持續用設計改變世界。
+        </p>
+
+        <div class="footer">
+            <div class="seal">HCI<br>2026</div>
+            <div class="signature">Kevin Cheng<br>Instructor</div>
+            <div class="signature">AI Agent<br>Co-Pilot</div>
+        </div>
+    </div>
+
+    <script>
+        function generateCertificate() {
+            const nameInput = document.getElementById('userName');
+            const name = nameInput.value.trim();
+            
+            if (!name) {
+                alert("請留下你的大名！");
+                return;
+            }
+
+            // 1. 設定名字
+            document.getElementById('certName').innerText = name;
+
+            // 2. 切換畫面
+            document.getElementById('inputArea').classList.add('hide');
+            
+            setTimeout(() => {
+                document.getElementById('cert').classList.add('show');
+                
+                // 3. 施放慶祝彩帶 (Confetti)
+                fireConfetti();
+                // 再放一次加強效果
+                setTimeout(fireConfetti, 300);
+            }, 500);
+        }
+
+        function fireConfetti() {
+            var count = 200;
+            var defaults = {
+                origin: { y: 0.7 }
+            };
+
+            function fire(particleRatio, opts) {
+                confetti(Object.assign({}, defaults, opts, {
+                    particleCount: Math.floor(count * particleRatio)
+                }));
+            }
+
+            fire(0.25, { spread: 26, startVelocity: 55, });
+            fire(0.2, { spread: 60, });
+            fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+            fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+            fire(0.1, { spread: 120, startVelocity: 45, });
+        }
+    </script>
+</body>
+</html>
