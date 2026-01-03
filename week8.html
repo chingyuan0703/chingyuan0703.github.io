@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Week 8: Emotion Vending Machine</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #2d3436;
+            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
+        }
+
+        h1 { color: #ffeaa7; margin-bottom: 20px; letter-spacing: 2px; text-shadow: 0 0 10px rgba(255, 234, 167, 0.5); }
+
+        /* 販賣機本體 */
+        .machine {
+            width: 300px;
+            height: 500px;
+            background: linear-gradient(180deg, #ff7675 0%, #d63031 100%);
+            border-radius: 20px 20px 0 0;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+            border: 4px solid #b33939;
+            border-bottom: none;
+        }
+
+        /* 櫥窗 */
+        .window {
+            width: 240px;
+            height: 200px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            border: 2px solid rgba(255,255,255,0.3);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            place-items: center;
+            padding: 10px;
+            margin-bottom: 20px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
+        }
+
+        .drink {
+            width: 40px;
+            height: 60px;
+            background: #74b9ff;
+            border-radius: 5px;
+            position: relative;
+        }
+        .drink::after { content: ''; position: absolute; top: 10px; left: 5px; width: 30px; height: 15px; background: rgba(255,255,255,0.3); border-radius: 2px;}
+
+        /* 輸入煩惱區 */
+        .input-area {
+            width: 240px;
+            background: #2d3436;
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 60px;
+            background: #636e72;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            padding: 10px;
+            box-sizing: border-box;
+            resize: none;
+        }
+        textarea::placeholder { color: #b2bec3; font-size: 0.8rem; }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #ffeaa7;
+            border: none;
+            border-radius: 20px;
+            color: #d63031;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        button:active { transform: scale(0.95); }
+
+        /* 取物口 */
+        .pickup-slot {
+            width: 200px;
+            height: 60px;
+            background: #2d3436;
+            margin-top: auto;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            box-shadow: inset 0 5px 10px rgba(0,0,0,0.5);
+            overflow: visible; /* 讓掉出來的飲料可見 */
+        }
+
+        /* 掉出來的飲料 (初始隱藏) */
+        .dropped-item {
+            width: 50px;
+            height: 80px;
+            background: linear-gradient(135deg, #a29bfe, #6c5ce7);
+            border-radius: 8px;
+            position: absolute;
+            bottom: 10px;
+            transform: translateY(-200px) rotate(0deg);
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        .dropped-item.fall {
+            opacity: 1;
+            transform: translateY(0) rotate(10deg);
+        }
+
+        /* 籤詩卡片 */
+        .message-card {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            text-align: center;
+            width: 80%;
+            max-width: 300px;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 100;
+        }
+        
+        .message-card.show { transform: translate(-50%, -50%) scale(1); }
+        .close-btn { margin-top: 20px; background: #2d3436; color: white; width: auto; padding: 8px 20px; }
+
+        /* 動畫 */
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
+        }
+
+        .machine.working { animation: shake 0.5s infinite; }
+
+    </style>
+</head>
+<body>
+
+    <h1>Emotion Vending Machine</h1>
+
+    <div class="machine" id="machine">
+        <div class="window">
+            <div class="drink" style="background:#fab1a0"></div>
+            <div class="drink" style="background:#81ecec"></div>
+            <div class="drink" style="background:#74b9ff"></div>
+            <div class="drink" style="background:#a29bfe"></div>
+            <div class="drink" style="background:#ffeaa7"></div>
+            <div class="drink" style="background:#55efc4"></div>
+        </div>
+
+        <div class="input-area">
+            <textarea id="worryInput" placeholder="在這裡輸入你的煩惱..."></textarea>
+            <button onclick="insertCoin()">投入煩惱 (Insert)</button>
+        </div>
+
+        <div class="pickup-slot">
+            <div class="dropped-item" id="product" onclick="openProduct()">🎁</div>
+        </div>
+    </div>
+
+    <div class="message-card" id="card">
+        <h3 style="color:#6c5ce7">來自販賣機的悄悄話</h3>
+        <p id="msgText" style="color:#636e72; line-height:1.6; font-size:1.1rem;">這裡會顯示安慰的話</p>
+        <button class="close-btn" onclick="closeCard()">收下勇氣</button>
+    </div>
+
+    <script>
+        const machine = document.getElementById('machine');
+        const product = document.getElementById('product');
+        const card = document.getElementById('card');
+        const msgText = document.getElementById('msgText');
+        const input = document.getElementById('worryInput');
+
+        const messages = [
+            "現在的困難，是為了把未來的你打磨得更閃亮。",
+            "休息一下也沒關係，世界不會因為你停下五分鐘就崩塌。",
+            "你的焦慮來自於你的上進心，請對自己溫柔一點。",
+            "深呼吸。這件事在五年後看來，可能只是一個笑話。",
+            "允許自己不完美，是強大的人才有的特權。",
+            "去喝杯水吧，大腦缺水的時候容易胡思亂想。",
+            "你是被愛的，即使你現在感覺不到。"
+        ];
+
+        function insertCoin() {
+            if (input.value.trim() === "") {
+                input.placeholder = "請先輸入一點什麼...";
+                return; // 空的不能投
+            }
+
+            // 1. 清空煩惱
+            input.value = "";
+            input.placeholder = "煩惱已被吞噬...";
+
+            // 2. 機器運作 (震動)
+            machine.classList.add('working');
+            
+            // 3. 延遲後掉落商品
+            setTimeout(() => {
+                machine.classList.remove('working');
+                product.classList.add('fall');
+            }, 800);
+        }
+
+        function openProduct() {
+            // 隨機選一句話
+            const randomMsg = messages[Math.floor(Math.random() * messages.length)];
+            msgText.innerText = randomMsg;
+            
+            // 顯示卡片
+            card.classList.add('show');
+            
+            // 重置掉落物
+            product.classList.remove('fall');
+        }
+
+        function closeCard() {
+            card.classList.remove('show');
+            input.placeholder = "在這裡輸入你的煩惱...";
+        }
+    </script>
+</body>
+</html>
