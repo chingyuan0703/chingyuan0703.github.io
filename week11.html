@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Week 11: HCI Gashapon</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #ffeaa7;
+            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
+        }
+
+        h1 { color: #d63031; margin-bottom: 10px; letter-spacing: 2px; text-shadow: 2px 2px 0px rgba(0,0,0,0.1); }
+        p { color: #e17055; margin-bottom: 30px; font-weight: bold; }
+
+        /* 扭蛋機本體 */
+        .machine-container {
+            position: relative;
+            width: 300px;
+            height: 450px;
+        }
+
+        .globe {
+            width: 260px;
+            height: 260px;
+            background: rgba(255, 255, 255, 0.5);
+            border: 8px solid #ff7675;
+            border-radius: 50%;
+            position: absolute;
+            top: 0;
+            left: 20px;
+            z-index: 2;
+            overflow: hidden;
+            box-shadow: inset -10px -10px 20px rgba(0,0,0,0.1);
+        }
+
+        /* 裡面的小球 */
+        .ball {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            position: absolute;
+            border: 2px solid rgba(0,0,0,0.1);
+        }
+
+        .base {
+            width: 280px;
+            height: 220px;
+            background: #d63031;
+            position: absolute;
+            bottom: 0;
+            left: 10px;
+            border-radius: 20px 20px 40px 40px;
+            z-index: 1;
+            box-shadow: 0 10px 0 #b33939;
+        }
+
+        /* 旋鈕 */
+        .knob-plate {
+            width: 100px;
+            height: 100px;
+            background: #fab1a0;
+            border-radius: 50%;
+            position: absolute;
+            top: 40px;
+            left: 90px;
+            box-shadow: inset 0 5px 10px rgba(0,0,0,0.2);
+        }
+
+        .knob {
+            width: 20px;
+            height: 80px;
+            background: #fff;
+            position: absolute;
+            top: 10px;
+            left: 40px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            box-shadow: 0 5px 5px rgba(0,0,0,0.2);
+        }
+        
+        .knob::after {
+            content: '';
+            position: absolute;
+            width: 80px;
+            height: 20px;
+            background: #fff;
+            top: 30px;
+            left: -30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 5px rgba(0,0,0,0.2);
+        }
+
+        /* 出口 */
+        .exit {
+            width: 80px;
+            height: 60px;
+            background: #333;
+            position: absolute;
+            bottom: 20px;
+            left: 100px;
+            border-radius: 10px 10px 30px 30px;
+            overflow: visible;
+        }
+
+        /* 掉落的球 */
+        .dropped-ball {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            position: absolute;
+            left: 120px;
+            bottom: 40px;
+            transform: scale(0);
+            z-index: 10;
+            transition: all 0.5s;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 30px;
+            color: rgba(255,255,255,0.8);
+        }
+
+        .dropped-ball.animate {
+            animation: dropBounce 1s forwards;
+        }
+
+        @keyframes dropBounce {
+            0% { transform: translateY(-50px) scale(0); }
+            50% { transform: translateY(80px) scale(1); }
+            70% { transform: translateY(60px) scale(1); }
+            100% { transform: translateY(80px) scale(1); }
+        }
+
+        /* 知識卡片 */
+        .card-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 100;
+        }
+        .card-overlay.show { opacity: 1; pointer-events: auto; }
+
+        .card {
+            background: white;
+            width: 300px;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            transform: scale(0.8) rotate(-10deg);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+        .card-overlay.show .card { transform: scale(1) rotate(0deg); }
+
+        .card h2 { color: #6c5ce7; margin: 0 0 10px 0; }
+        .card p { color: #636e72; line-height: 1.6; }
+        .close-btn {
+            background: #d63031; color: white; border: none; padding: 8px 20px;
+            border-radius: 20px; margin-top: 20px; cursor: pointer; font-weight: bold;
+        }
+
+    </style>
+</head>
+<body>
+
+    <h1>HCI Gashapon</h1>
+    <p>轉動旋鈕，複習一個 HCI 概念！</p>
+
+    <div class="machine-container">
+        <div class="globe" id="globe">
+            </div>
+
+        <div class="base">
+            <div class="knob-plate">
+                <div class="knob" id="knob" onclick="turnKnob()"></div>
+            </div>
+            <div class="exit"></div>
+        </div>
+    </div>
+
+    <div class="dropped-ball" id="resultBall" onclick="openCard()">?</div>
+
+    <div class="card-overlay" id="overlay">
+        <div class="card">
+            <h2 id="cardTitle">Affordance</h2>
+            <p id="cardDesc">預設用途：物品的形狀會暗示你該如何使用它。像是門把暗示「轉」，按鈕暗示「按」。</p>
+            <button class="close-btn" onclick="closeCard()">收下知識</button>
+        </div>
+    </div>
+
+    <script>
+        const globe = document.getElementById('globe');
+        const knob = document.getElementById('knob');
+        const resultBall = document.getElementById('resultBall');
+        const overlay = document.getElementById('overlay');
+        const cardTitle = document.getElementById('cardTitle');
+        const cardDesc = document.getElementById('cardDesc');
+
+        // 知識庫
+        const knowledge = [
+            { t: "Affordance (預設用途)", d: "物品的物理特徵會「暗示」你該如何操作。比如：扁平的按鈕暗示『按我』，杯子的把手暗示『握我』。" },
+            { t: "Feedback (回饋)", d: "系統對你操作的反應。按下去要有聲音、震動或畫面變化，你才知到系統『收到』了。" },
+            { t: "Mental Model (心智模型)", d: "使用者腦中對運作原理的想像。如果你的設計跟使用者的想像不一樣（例如開關方向相反），就會發生錯誤。" },
+            { t: "Fitts's Law (費茨定律)", d: "目標越大、距離越近，操作越快。這就是為什麼重要的按鈕（如剎車、結帳）都要做得特別大！" },
+            { t: "Wizard of Oz (綠野仙蹤)", d: "在還沒寫好程式前，由人類躲在幕後假裝 AI 來測試使用者的反應。快速驗證點子的好方法！" },
+            { t: "Gulf of Execution (執行鴻溝)", d: "「我想做的」跟「系統允許我做的」之間的差距。設計師的任務就是縮小這個鴻溝。" }
+        ];
+
+        // 產生裝飾用的小球
+        const colors = ['#ff7675', '#74b9ff', '#55efc4', '#a29bfe', '#ffeaa7'];
+        for(let i=0; i<15; i++) {
+            const b = document.createElement('div');
+            b.className = 'ball';
+            b.style.background = colors[Math.floor(Math.random()*colors.length)];
+            b.style.left = Math.random() * 200 + 'px';
+            b.style.top = Math.random() * 150 + 50 + 'px';
+            b.style.transform = `rotate(${Math.random()*360}deg)`;
+            globe.appendChild(b);
+        }
+
+        let isTurning = false;
+
+        function turnKnob() {
+            if(isTurning) return;
+            isTurning = true;
+
+            // 1. 旋轉動畫
+            knob.style.transform = "rotate(360deg)";
+            
+            // 2. 內部球攪動 (簡單位移模擬)
+            const balls = document.querySelectorAll('.globe .ball');
+            balls.forEach(b => {
+                b.style.transition = "all 0.5s";
+                b.style.top = Math.random() * 150 + 50 + 'px';
+                b.style.left = Math.random() * 200 + 'px';
+            });
+
+            // 3. 掉落球
+            setTimeout(() => {
+                // 選定一個顏色和知識
+                const color = colors[Math.floor(Math.random()*colors.length)];
+                const content = knowledge[Math.floor(Math.random()*knowledge.length)];
+                
+                resultBall.style.background = color;
+                resultBall.style.display = 'flex';
+                resultBall.classList.add('animate');
+                
+                // 綁定資料
+                resultBall.dataset.title = content.t;
+                resultBall.dataset.desc = content.d;
+
+                // 重置旋鈕
+                setTimeout(() => { 
+                    knob.style.transform = "rotate(0deg)";
+                    isTurning = false;
+                }, 500);
+
+            }, 600);
+        }
+
+        function openCard() {
+            if(!resultBall.classList.contains('animate')) return;
+
+            cardTitle.innerText = resultBall.dataset.title;
+            cardDesc.innerText = resultBall.dataset.desc;
+            overlay.classList.add('show');
+        }
+
+        function closeCard() {
+            overlay.classList.remove('show');
+            resultBall.classList.remove('animate');
+            resultBall.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
