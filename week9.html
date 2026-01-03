@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Week 9: Parallel Universe</title>
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --text-color: #333;
+            --accent-color: #6c5ce7;
+            --font-family: 'Segoe UI', sans-serif;
+            --card-bg: white;
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-family);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
+            overflow: hidden;
+        }
+
+        h1 { margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; }
+        p { opacity: 0.7; margin-bottom: 40px; }
+
+        .scanner-container {
+            width: 300px;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            transition: all 0.5s;
+            position: relative;
+            z-index: 10;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1rem;
+            outline: none;
+            box-sizing: border-box;
+            background: rgba(255,255,255,0.5);
+            color: var(--text-color);
+        }
+
+        button {
+            padding: 15px;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        button:active { transform: scale(0.95); }
+
+        .result-display {
+            margin-top: 20px;
+            min-height: 100px;
+            padding: 15px;
+            border-left: 4px solid var(--accent-color);
+            background: rgba(255,255,255,0.05);
+            font-style: italic;
+            line-height: 1.6;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s;
+        }
+        .result-display.show { opacity: 1; transform: translateY(0); }
+
+        /* 宇宙標籤 */
+        .universe-tag {
+            position: absolute;
+            top: -15px;
+            right: 20px;
+            background: var(--accent-color);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        /* Glitch Animation */
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-5px, 5px); }
+            40% { transform: translate(-5px, -5px); }
+            60% { transform: translate(5px, 5px); }
+            80% { transform: translate(5px, -5px); }
+            100% { transform: translate(0); }
+        }
+        .glitching { animation: glitch 0.2s infinite; filter: invert(1); }
+
+        /* 背景粒子 */
+        .particle {
+            position: absolute;
+            background: var(--accent-color);
+            border-radius: 50%;
+            opacity: 0.2;
+            pointer-events: none;
+        }
+
+    </style>
+</head>
+<body>
+
+    <h1>Parallel Scanner</h1>
+    <p>輸入一個物件，觀測它在平行宇宙的樣子</p>
+
+    <div class="scanner-container" id="card">
+        <div class="universe-tag" id="tag">UNIVERSE-001</div>
+        <input type="text" id="inputObj" placeholder="例如：一杯咖啡">
+        <button onclick="scanUniverse()">開啟蟲洞 (SCAN)</button>
+        
+        <div class="result-display" id="result">
+            等待輸入...
+        </div>
+    </div>
+
+    <script>
+        const body = document.body;
+        const input = document.getElementById('inputObj');
+        const result = document.getElementById('result');
+        const tag = document.getElementById('tag');
+        const card = document.getElementById('card');
+
+        // 定義不同的平行宇宙風格
+        const universes = [
+            {
+                name: "CYBERPUNK-2077",
+                bg: "#0b1021",
+                text: "#00f2ff",
+                accent: "#ff0099",
+                font: "'Courier New', monospace",
+                template: (obj) => `在霓虹雨下的夜之城，你的「${obj}」被植入了神經晶片。它發出紫色的微光，試圖駭入你的視覺神經，販賣虛擬的快樂。`
+            },
+            {
+                name: "GHIBLI-FOREST",
+                bg: "#e3f2fd",
+                text: "#2c3e50",
+                accent: "#6ab04c",
+                font: "'Georgia', serif",
+                template: (obj) => `在微風吹拂的魔法森林裡，你的「${obj}」長出了眼睛和短腿。它跟著龍貓一起在站牌下等公車，手裡拿著一片荷葉遮雨。`
+            },
+            {
+                name: "PIXEL-ARCADE",
+                bg: "#2d3436",
+                text: "#dfe6e9",
+                accent: "#fdcb6e",
+                font: "'Press Start 2P', cursive, sans-serif", // 模擬像素字
+                template: (obj) => `[SYSTEM] 發現道具：${obj}。解析度：8-bit。它在螢幕上閃爍著，伴隨著 80 年代的電子音效。你獲得了 +100 分。`
+            },
+            {
+                name: "NOIR-CINEMA",
+                bg: "#111",
+                text: "#ccc",
+                accent: "#555",
+                font: "sans-serif",
+                template: (obj) => `雨一直在下。你的「${obj}」靜靜地躺在陰暗的巷弄裡。這座城市沒有色彩，只有黑與白，以及無盡的孤獨與謎團。`
+            }
+        ];
+
+        function scanUniverse() {
+            const obj = input.value.trim();
+            if(!obj) return;
+
+            // 1. Glitch Effect
+            body.classList.add('glitching');
+            result.classList.remove('show');
+            result.innerText = "SCANNING REALITY...";
+            
+            setTimeout(() => {
+                body.classList.remove('glitching');
+                
+                // 2. Random Universe
+                const universe = universes[Math.floor(Math.random() * universes.length)];
+                applyStyle(universe);
+                
+                // 3. Show Result
+                tag.innerText = universe.name;
+                result.innerText = universe.template(obj);
+                result.classList.add('show');
+                
+                createParticles(universe.accent);
+
+            }, 800);
+        }
+
+        function applyStyle(u) {
+            document.documentElement.style.setProperty('--bg-color', u.bg);
+            document.documentElement.style.setProperty('--text-color', u.text);
+            document.documentElement.style.setProperty('--accent-color', u.accent);
+            document.documentElement.style.setProperty('--font-family', u.font);
+        }
+
+        function createParticles(color) {
+            // 清除舊粒子
+            document.querySelectorAll('.particle').forEach(p => p.remove());
+
+            for(let i=0; i<20; i++) {
+                const p = document.createElement('div');
+                p.classList.add('particle');
+                p.style.backgroundColor = color;
+                
+                const size = Math.random() * 20 + 5;
+                p.style.width = size + 'px';
+                p.style.height = size + 'px';
+                p.style.left = Math.random() * 100 + 'vw';
+                p.style.top = Math.random() * 100 + 'vh';
+                
+                p.style.transition = `all ${Math.random()*2+1}s ease-out`;
+                
+                body.appendChild(p);
+                
+                // 動畫
+                setTimeout(() => {
+                    p.style.transform = `translate(${Math.random()*100-50}px, ${Math.random()*100-50}px) scale(0)`;
+                    p.style.opacity = 0;
+                }, 100);
+            }
+        }
+    </script>
+</body>
+</html>
