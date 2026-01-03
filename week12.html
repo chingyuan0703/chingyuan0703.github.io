@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Week 12: Calm Breathing</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            font-family: 'Segoe UI', sans-serif;
+            color: #555;
+            overflow: hidden;
+            transition: background 10s ease;
+        }
+
+        h1 {
+            font-weight: 300;
+            letter-spacing: 2px;
+            margin-bottom: 50px;
+            color: #6c5ce7;
+            opacity: 0.8;
+        }
+
+        /* 呼吸圓圈容器 */
+        .circle-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 外層光暈 */
+        .glow {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+            z-index: 1;
+            transform: scale(1);
+        }
+
+        /* 核心圓圈 */
+        .circle {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: white;
+            z-index: 2;
+            transform: scale(0.8);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 文字指示 */
+        .instruction {
+            position: relative;
+            z-index: 3;
+            text-align: center;
+        }
+
+        .text {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: #6c5ce7;
+            font-weight: bold;
+            display: block;
+        }
+
+        .timer {
+            font-size: 3rem;
+            color: #a29bfe;
+        }
+
+        /* 啟動按鈕 */
+        .start-btn {
+            margin-top: 60px;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 30px;
+            background: white;
+            color: #6c5ce7;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.2s, opacity 0.5s;
+        }
+
+        .start-btn:hover { transform: scale(1.05); }
+        .start-btn.hide { opacity: 0; pointer-events: none; }
+
+        /* 呼吸動畫 Class */
+        /* 吸氣: 變大 */
+        .inhale .glow, .inhale .circle {
+            transition: transform 4s cubic-bezier(0.4, 0, 1, 1); /* Ease-in */
+            transform: scale(1.2);
+        }
+        
+        /* 屏息: 保持 */
+        .hold .glow, .hold .circle {
+            transition: transform 7s linear;
+            transform: scale(1.2); /* 保持在最大 */
+        }
+
+        /* 吐氣: 變小 */
+        .exhale .glow, .exhale .circle {
+            transition: transform 8s cubic-bezier(0, 0, 0.2, 1); /* Ease-out */
+            transform: scale(0.8);
+        }
+
+    </style>
+</head>
+<body>
+
+    <h1>4 - 7 - 8 Breathing</h1>
+
+    <div class="circle-container" id="container">
+        <div class="glow"></div>
+        <div class="circle"></div>
+        <div class="instruction">
+            <span class="text" id="statusText">Ready</span>
+            <span class="timer" id="timerText"></span>
+        </div>
+    </div>
+
+    <button class="start-btn" id="startBtn" onclick="startBreathing()">開始呼吸</button>
+
+    <script>
+        const container = document.getElementById('container');
+        const text = document.getElementById('statusText');
+        const timerText = document.getElementById('timerText');
+        const btn = document.getElementById('startBtn');
+
+        let isRunning = false;
+
+        function startBreathing() {
+            if (isRunning) return;
+            isRunning = true;
+            btn.classList.add('hide');
+
+            breathCycle();
+            // 總週期 19秒 (4+7+8)
+            setInterval(breathCycle, 19000);
+        }
+
+        function breathCycle() {
+            // 1. 吸氣 (Inhale) - 4秒
+            setPhase('吸氣 Inhale', 4, 'inhale');
+
+            setTimeout(() => {
+                // 2. 屏息 (Hold) - 7秒
+                setPhase('屏息 Hold', 7, 'hold');
+
+                setTimeout(() => {
+                    // 3. 吐氣 (Exhale) - 8秒
+                    setPhase('吐氣 Exhale', 8, 'exhale');
+                }, 7000);
+
+            }, 4000);
+        }
+
+        function setPhase(phaseName, duration, className) {
+            text.innerText = phaseName;
+            container.className = 'circle-container ' + className;
+            
+            // 倒數計時邏輯
+            let timeLeft = duration;
+            timerText.innerText = timeLeft;
+            
+            const interval = setInterval(() => {
+                timeLeft--;
+                if (timeLeft > 0) {
+                    timerText.innerText = timeLeft;
+                } else {
+                    clearInterval(interval);
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
