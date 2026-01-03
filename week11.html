@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Week 10: HCI Translator</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            color: #333;
+        }
+
+        h1 { margin-bottom: 20px; color: #4b5563; }
+        p { margin-bottom: 40px; color: #6b7280; text-align: center; font-size: 0.9rem;}
+
+        .translator-box {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 320px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .translator-box:hover { transform: translateY(-5px); }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 1rem;
+            outline: none;
+            background-color: #fff;
+            cursor: pointer;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: #6366f1;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover { background: #4f46e5; }
+
+        /* 結果卡片 */
+        .result-card {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 15px;
+            background: #e0e7ff;
+            color: #3730a3;
+            text-align: left;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+
+        .result-card.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .result-card h3 { margin: 0 0 10px 0; font-size: 1.1rem; }
+        .result-card p { margin: 0; color: #4338ca; line-height: 1.5; font-size: 1rem; text-align: left;}
+        
+        .icon-badge {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+    </style>
+</head>
+<body>
+
+    <h1>HCI Concept Translator</h1>
+    <p>科普轉譯：把黑話變成白話文</p>
+
+    <div class="translator-box">
+        <span class="icon-badge">🗣️</span>
+        
+        <select id="concept">
+            <option value="" disabled selected>選擇一個 HCI 術語...</option>
+            <option value="affordance">Affordance (預設用途)</option>
+            <option value="feedback">Feedback (回饋)</option>
+            <option value="mental_model">Mental Model (心智模型)</option>
+            <option value="visibility">Visibility (可見性)</option>
+        </select>
+
+        <select id="audience">
+            <option value="" disabled selected>解釋給誰聽？</option>
+            <option value="kid">5 歲小孩</option>
+            <option value="grandma">阿嬤</option>
+            <option value="alien">外星人</option>
+            <option value="poet">詩人</option>
+        </select>
+
+        <button onclick="translateTerm()">開始轉譯 (Translate)</button>
+
+        <div class="result-card" id="result">
+            <h3 id="resTitle">解釋：</h3>
+            <p id="resText">請選擇術語和對象...</p>
+        </div>
+    </div>
+
+    <script>
+        // 簡單的資料庫
+        const db = {
+            affordance: {
+                kid: "就像是門把在跟你招手說：『來轉我呀！』或是椅子張開手臂說：『來坐下吧！』東西的形狀會告訴你該怎麼跟它玩。",
+                grandma: "這就是『眼緣』啦！好用的東西，不用看說明書，拿起來就知道怎麼用，就像妳拿起茶壺就知道要握把手一樣。",
+                alien: "地球物體的物理構造發出的隱形信號，誘導碳基生物進行特定的互動行為。",
+                poet: "物體無聲的邀請，是形式與功能之間最優雅的默契。"
+            },
+            feedback: {
+                kid: "就像你按門鈴，聽到『叮咚』一聲。如果沒有聲音，你就會以為門鈴壞掉了。機器要回答你，你才知道它聽到了。",
+                grandma: "就像妳跟人講話，對方要點頭或是『嗯』一聲，妳才知道他有在聽。機器也要有禮貌，按了要有反應。",
+                alien: "系統對輸入信號的確認響應，用於閉合控制迴路，防止操作者產生不確定性焦慮。",
+                poet: "是觸碰後的回響，是機器證明自己靈魂存在的微弱心跳。"
+            },
+            mental_model: {
+                kid: "就是你腦袋裡的小劇場。你以為開關往下按燈會亮，結果它是往上按。當小劇場跟真的不一樣，你就會搞混。",
+                grandma: "就是『老習慣』啦！妳覺得瓦斯爐應該是向右轉開，結果它是向左轉，這就是它的設計跟妳心裡想的不一樣。",
+                alien: "生物體大腦中對現實運作規則的模擬預測系統。設計必須匹配此模擬，否則會導致認知失調。",
+                poet: "我們在腦海中繪製的地圖，指引我們在複雜的科技迷宮中前行。"
+            },
+            visibility: {
+                kid: "就像捉迷藏，如果開關藏在櫃子後面，你就找不到。重要的按鈕要像紅燈一樣，一眼就看到！",
+                grandma: "東西不要藏起來啦！要用的按鈕要擺在顯眼的地方，不要讓我找半天。",
+                alien: "關鍵控制元件的光學可探測性。缺乏此屬性會導致操作效率降低。",
+                poet: "真理不該被隱藏，功能的光芒應該在指尖觸及之處閃耀。"
+            }
+        };
+
+        function translateTerm() {
+            const concept = document.getElementById('concept').value;
+            const audience = document.getElementById('audience').value;
+            const resultCard = document.getElementById('result');
+            const resTitle = document.getElementById('resTitle');
+            const resText = document.getElementById('resText');
+
+            if (!concept || !audience) {
+                alert("請先選擇術語和對象！");
+                return;
+            }
+
+            // 先隱藏再顯示，製造刷新感
+            resultCard.classList.remove('show');
+            
+            setTimeout(() => {
+                const text = db[concept][audience];
+                
+                // 設定標題
+                let titlePrefix = "";
+                if(audience === 'kid') titlePrefix = "👶 給小朋友：";
+                if(audience === 'grandma') titlePrefix = "👵 給阿嬤：";
+                if(audience === 'alien') titlePrefix = "👽 給外星人：";
+                if(audience === 'poet') titlePrefix = "📜 給詩人：";
+
+                resTitle.innerText = titlePrefix;
+                resText.innerText = text;
+                
+                resultCard.classList.add('show');
+            }, 300);
+        }
+    </script>
+</body>
+</html>
